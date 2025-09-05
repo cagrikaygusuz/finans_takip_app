@@ -32,6 +32,11 @@ const TimeDepositDetailsSchema = Schema(
       id: 3,
       name: r'startDate',
       type: IsarType.dateTime,
+    ),
+    r'taxRate': PropertySchema(
+      id: 4,
+      name: r'taxRate',
+      type: IsarType.double,
     )
   },
   estimateSize: _timeDepositDetailsEstimateSize,
@@ -59,6 +64,7 @@ void _timeDepositDetailsSerialize(
   writer.writeDouble(offsets[1], object.interestRate);
   writer.writeDouble(offsets[2], object.principalAmount);
   writer.writeDateTime(offsets[3], object.startDate);
+  writer.writeDouble(offsets[4], object.taxRate);
 }
 
 TimeDepositDetails _timeDepositDetailsDeserialize(
@@ -72,6 +78,7 @@ TimeDepositDetails _timeDepositDetailsDeserialize(
   object.interestRate = reader.readDoubleOrNull(offsets[1]);
   object.principalAmount = reader.readDoubleOrNull(offsets[2]);
   object.startDate = reader.readDateTimeOrNull(offsets[3]);
+  object.taxRate = reader.readDoubleOrNull(offsets[4]);
   return object;
 }
 
@@ -90,6 +97,8 @@ P _timeDepositDetailsDeserializeProp<P>(
       return (reader.readDoubleOrNull(offset)) as P;
     case 3:
       return (reader.readDateTimeOrNull(offset)) as P;
+    case 4:
+      return (reader.readDoubleOrNull(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
   }
@@ -409,6 +418,90 @@ extension TimeDepositDetailsQueryFilter
         includeLower: includeLower,
         upper: upper,
         includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<TimeDepositDetails, TimeDepositDetails, QAfterFilterCondition>
+      taxRateIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'taxRate',
+      ));
+    });
+  }
+
+  QueryBuilder<TimeDepositDetails, TimeDepositDetails, QAfterFilterCondition>
+      taxRateIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'taxRate',
+      ));
+    });
+  }
+
+  QueryBuilder<TimeDepositDetails, TimeDepositDetails, QAfterFilterCondition>
+      taxRateEqualTo(
+    double? value, {
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'taxRate',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<TimeDepositDetails, TimeDepositDetails, QAfterFilterCondition>
+      taxRateGreaterThan(
+    double? value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'taxRate',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<TimeDepositDetails, TimeDepositDetails, QAfterFilterCondition>
+      taxRateLessThan(
+    double? value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'taxRate',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<TimeDepositDetails, TimeDepositDetails, QAfterFilterCondition>
+      taxRateBetween(
+    double? lower,
+    double? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'taxRate',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        epsilon: epsilon,
       ));
     });
   }

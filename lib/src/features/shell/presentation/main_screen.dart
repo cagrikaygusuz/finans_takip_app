@@ -8,6 +8,7 @@ import 'package:finans_takip_app/src/features/transactions/presentation/transact
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:finans_takip_app/src/features/bills/presentation/bills_screen.dart'; // Yeni import
 
 class MainScreen extends ConsumerStatefulWidget {
   const MainScreen({super.key});
@@ -23,6 +24,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
     DashboardScreen(),
     TransactionsScreen(),
     AccountsScreen(),
+    BillsScreen(), // Yeni ekran eklendi
     SettingsScreen(),
   ];
 
@@ -52,6 +54,10 @@ class _MainScreenState extends ConsumerState<MainScreen> {
           BottomNavigationBarItem(
             icon: Icon(Icons.account_balance),
             label: 'Hesaplar',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.receipt_long),
+            label: 'Faturalar',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.settings),
