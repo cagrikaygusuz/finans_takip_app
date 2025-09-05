@@ -6,7 +6,7 @@ import 'package:finans_takip_app/src/features/transactions/data/transaction_mode
 import 'package:finans_takip_app/src/features/transactions/data/transaction_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:isar/isar.dart';
-
+1
 
 final transactionRepositoryProvider = Provider<TransactionRepository>((ref) {
   final isar = ref.watch(isarProvider).value!;
