@@ -12,6 +12,7 @@ dependencies:
   
   # State Management için
   flutter_riverpod: ^2.5.1
+  shared_preferences: ^2.2.3
   
   # Lokal Veritabanı için
   isar: ^3.1.0+1
