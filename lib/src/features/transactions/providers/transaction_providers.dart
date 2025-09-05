@@ -7,7 +7,6 @@ import 'package:finans_takip_app/src/features/transactions/data/transaction_repo
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:isar/isar.dart';
 
-
 final transactionRepositoryProvider = Provider<TransactionRepository>((ref) {
   final isar = ref.watch(isarProvider).value!;
   return TransactionRepository(isar);
@@ -22,49 +21,64 @@ final transactionFilterProvider = StateProvider<TransactionFilter>((ref) {
   return TransactionFilter(); // Başlangıçta boş filtre
 });
 
-// Filtrelenmiş işlem listesini sağlayan ana provider
+// Filtrelenmiş işlem listesini sağlayan ana provider (Manuel Filtreleme ile)
 final filteredTransactionListProvider = FutureProvider<List<Transaction>>((ref) async {
   final isar = await ref.watch(isarProvider.future);
   final filter = ref.watch(transactionFilterProvider);
+
+  // 1. Önce veritabanından TÜM işlemleri alıyoruz.
   final allTransactions = await isar.transactions.where().sortByDateDesc().findAll();
-// 2. Linkleri yüklüyoruz.
+
+  // 2. İşlemlerin bağlı olduğu hesapları ve kategorileri yüklüyoruz.
   for (var t in allTransactions) {
     await t.sourceAccount.load();
     await t.destinationAccount.load();
     await t.category.load();
   }
+
+  // 3. Listeyi Dart koduyla manuel olarak filtreliyoruz.
   final filteredList = allTransactions.where((t) {
-    if (filter.startDate != null && t.date.isBefore(filter.startDate!)) return false;
+    if (filter.startDate != null && t.date.isBefore(filter.startDate!)) {
+      return false;
+    }
     if (filter.endDate != null) {
       final endOfDay = DateTime(filter.endDate!.year, filter.endDate!.month, filter.endDate!.day, 23, 59, 59);
       if (t.date.isAfter(endOfDay)) return false;
     }
-    if (filter.transactionType != null && t.type != filter.transactionType) return false;
-    if (filter.account != null && (t.sourceAccount.value?.id != filter.account!.id && t.destinationAccount.value?.id != filter.account!.id)) return false;
-    if (filter.category != null && t.category.value?.id != filter.category!.id) return false;
-
+    if (filter.transactionType != null && t.type != filter.transactionType) {
+      return false;
+    }
+    if (filter.account != null && (t.sourceAccount.value?.id != filter.account!.id && t.destinationAccount.value?.id != filter.account!.id)) {
+      return false;
+    }
+    if (filter.category != null && t.category.value?.id != filter.category!.id) {
+      return false;
+    }
+    
     return true;
   }).toList();
-    return filteredList;
+
+  return filteredList;
 });
 
-// Belirli bir hesaba ait işlemleri getiren provider (değişiklik yok)
+// Belirli bir hesaba ait işlemleri getiren provider (Manuel Filtreleme ile)
 final transactionsForAccountProvider = FutureProvider.family<List<Transaction>, int>((ref, accountId) async {
   final isar = await ref.watch(isarProvider.future);
-  final account = await isar.accounts.get(accountId);
-  if (account == null) return [];
+  final allTransactions = await isar.transactions.where().sortByDateDesc().findAll();
 
-  return await isar.transactions
-      .filter()
-      .sourceAccountEqualTo(account)
-      .or()
-      .destinationAccountEqualTo(account)
-      .sortByDateDesc()
-      .findAll();
+  for (var t in allTransactions) {
+    await t.sourceAccount.load();
+    await t.destinationAccount.load();
+  }
+
+  return allTransactions.where((t) {
+    final isSource = t.sourceAccount.value?.id == accountId;
+    final isDestination = t.destinationAccount.value?.id == accountId;
+    return isSource || isDestination;
+  }).toList();
 });
 
-
-// TransactionController sınıfı (değişiklik yok)
+// TransactionController sınıfı
 class TransactionController {
   final Ref _ref;
   TransactionController(this._ref);
