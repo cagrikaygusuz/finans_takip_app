@@ -1,3 +1,4 @@
+import 'package:finans_takip_app/src/features/categories/data/category_model.dart';
 import 'package:finans_takip_app/src/features/dashboard/providers/dashboard_providers.dart';
 import 'package:finans_takip_app/src/features/transactions/data/transaction_model.dart';
 import 'package:flutter/material.dart';
@@ -9,105 +10,103 @@ class RecentTransactionsList extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
     final recentTransactions = ref.watch(recentTransactionsProvider);
 
     if (recentTransactions.isEmpty) {
-      return const SizedBox.shrink(); // Gösterilecek işlem yoksa boş alan bırak
+      return const SizedBox.shrink();
     }
 
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-            child: Text(
-              "Son İşlemler",
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                "Son İşlemler",
+                style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+              ),
+              TextButton(
+                onPressed: () {
+                  // TODO: Tüm işlemler sayfasına gitmek için bir yol eklenebilir.
+                  // Örneğin main_screen'deki BottomNavBar'ı kontrol eden bir provider ile.
+                },
+                child: const Text("Tümünü Gör"),
+              ),
+            ],
           ),
-          // ListView.builder yerine doğrudan Column kullanıyoruz çünkü eleman sayısı az (en fazla 5).
-          // Bu, gereksiz scrollbar oluşturmayı engeller.
-          ...recentTransactions.map((transaction) {
-            return _TransactionTile(transaction: transaction);
-          }).toList(),
-          // İleride tüm işlemleri görmek için bir buton eklenebilir
-          // TextButton(onPressed: (){}, child: Text("Tümünü Gör")),
+          const SizedBox(height: 8),
+          // Kartın kendisini ve gölgesini kaldırdık, artık doğrudan listeliyoruz.
+          ListView.separated(
+            itemCount: recentTransactions.length,
+            shrinkWrap: true, // Column içinde ListView kullanmak için zorunlu
+            physics: const NeverScrollableScrollPhysics(), // Column'un kaydırmasını engellemez
+            itemBuilder: (context, index) {
+              final transaction = recentTransactions[index];
+              return _TransactionTile(transaction: transaction);
+            },
+            separatorBuilder: (context, index) => const Divider(height: 1),
+          ),
         ],
       ),
     );
   }
 }
 
-// Her bir işlem satırı için özel bir widget
-class _TransactionTile extends StatelessWidget {
+// Her bir işlem satırı için özel, yeniden tasarlanmış widget
+class _TransactionTile extends ConsumerWidget {
   const _TransactionTile({required this.transaction});
 
   final Transaction transaction;
 
-  IconData _getIconForType(TransactionType type) {
-    switch (type) {
-      case TransactionType.income:
-        return Icons.arrow_upward;
-      case TransactionType.expense:
-        return Icons.arrow_downward;
-      case TransactionType.transfer:
-        return Icons.swap_horiz;
-    }
-  }
-
-  Color _getColorForType(TransactionType type) {
-    switch (type) {
-      case TransactionType.income:
-        return Colors.green;
-      case TransactionType.expense:
-        return Colors.red;
-      case TransactionType.transfer:
-        return Colors.blue;
-    }
+  // Kategori ikonları (ileride geliştirilebilir)
+  IconData _getIconForCategory(Category? category) {
+    // Şimdilik varsayılan bir ikon döndürelim
+    return Icons.label_outline_rounded;
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
     final currencyFormat = NumberFormat.currency(locale: 'tr_TR', symbol: '₺');
 
-    return ListTile(
-      leading: Icon(
-        _getIconForType(transaction.type),
-        color: _getColorForType(transaction.type),
-      ),
-      title: Text(transaction.description),
-      subtitle: FutureBuilder(
-        future: Future.wait([
-          transaction.sourceAccount.load(),
-          transaction.destinationAccount.load()
-        ]),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.done) {
-            final source = transaction.sourceAccount.value?.name;
-            final dest = transaction.destinationAccount.value?.name;
-            final date = DateFormat.yMd('tr_TR').format(transaction.date); // Tarihi formatla
+    return FutureBuilder(
+      // Kategori linkini burada yüklüyoruz
+      future: transaction.category.load(),
+      builder: (context, snapshot) {
+        final category = transaction.category.value;
+        final isExpense = transaction.type == TransactionType.expense;
+        final amountColor = isExpense ? null : Colors.green;
 
-            switch (transaction.type) {
-              case TransactionType.expense:
-            return Text('${source ?? '...'} • $date');
-              case TransactionType.income:
-            return Text('${dest ?? '...'} • $date');
-              case TransactionType.transfer:
-            return Text('${source ?? '?'} -> ${dest ?? '?'} • $date');
-    }
-          }
-          return const Text('...');
-        },
-      ),
-      trailing: Text(
-        currencyFormat.format(transaction.amount),
-        style: TextStyle(
-          fontWeight: FontWeight.bold,
-          color: _getColorForType(transaction.type),
-        ),
-      ),
+        return ListTile(
+          contentPadding: const EdgeInsets.symmetric(vertical: 8.0),
+          leading: CircleAvatar(
+            backgroundColor: theme.colorScheme.surface,
+            child: Icon(
+              _getIconForCategory(category),
+              color: theme.colorScheme.secondary,
+            ),
+          ),
+          title: Text(
+            transaction.description,
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
+          subtitle: Text(
+            category?.name ?? (isExpense ? 'Gider' : 'Gelir'),
+            style: theme.textTheme.bodySmall,
+          ),
+          trailing: Text(
+            '${isExpense ? '-' : '+'}${currencyFormat.format(transaction.amount)}',
+            style: theme.textTheme.titleMedium?.copyWith(
+              color: amountColor,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        );
+      },
     );
   }
 }

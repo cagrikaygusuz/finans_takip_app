@@ -8,40 +8,50 @@ class NetWorthCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
     final assets = ref.watch(totalAssetsProvider);
     final liabilities = ref.watch(totalLiabilitiesProvider);
     final netWorth = ref.watch(netWorthProvider);
-
-    // Para formatı için
     final currencyFormat = NumberFormat.currency(locale: 'tr_TR', symbol: '₺');
 
     return Card(
-      margin: const EdgeInsets.all(16.0),
-      elevation: 4,
+      // Yeni temamızda tanımladığımız renk ve şekli kullanacak
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(24.0),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Net Varlık',
-              style: Theme.of(context).textTheme.titleMedium,
-              textAlign: TextAlign.center,
+              'Toplam Net Varlık',
+              style: theme.textTheme.titleMedium?.copyWith(
+                color: theme.textTheme.bodySmall?.color?.withOpacity(0.7),
+              ),
             ),
             const SizedBox(height: 8),
             Text(
               currencyFormat.format(netWorth),
-              style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.primary,
-                  fontWeight: FontWeight.bold),
-              textAlign: TextAlign.center,
+              style: theme.textTheme.displaySmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: theme.colorScheme.primary),
             ),
-            const Divider(height: 32),
+            const SizedBox(height: 24),
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                _InfoColumn(title: 'Toplam Varlıklar', amount: assets, color: Colors.green),
-                _InfoColumn(title: 'Toplam Borçlar', amount: liabilities, color: Colors.red),
+                _buildAssetLiabilityInfo(
+                  context: context,
+                  icon: Icons.arrow_upward_rounded,
+                  color: Colors.green,
+                  label: 'VARLIKLAR',
+                  amount: currencyFormat.format(assets),
+                ),
+                const SizedBox(width: 24),
+                 _buildAssetLiabilityInfo(
+                  context: context,
+                  icon: Icons.arrow_downward_rounded,
+                  color: Colors.red,
+                  label: 'BORÇLAR',
+                  amount: currencyFormat.format(liabilities),
+                ),
               ],
             ),
           ],
@@ -49,25 +59,30 @@ class NetWorthCard extends ConsumerWidget {
       ),
     );
   }
-}
 
-class _InfoColumn extends StatelessWidget {
-  const _InfoColumn({required this.title, required this.amount, required this.color});
-  final String title;
-  final double amount;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    final currencyFormat = NumberFormat.currency(locale: 'tr_TR', symbol: '₺');
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildAssetLiabilityInfo({
+    required BuildContext context,
+    required IconData icon,
+    required Color color,
+    required String label,
+    required String amount,
+  }) {
+    final theme = Theme.of(context);
+    return Row(
       children: [
-        Text(title, style: Theme.of(context).textTheme.bodyMedium),
-        Text(
-          currencyFormat.format(amount),
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(color: color, fontWeight: FontWeight.w600),
+        CircleAvatar(
+          radius: 16,
+          backgroundColor: color.withOpacity(0.1),
+          child: Icon(icon, color: color, size: 20),
         ),
+        const SizedBox(width: 8),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(label, style: theme.textTheme.labelMedium?.copyWith(color: Colors.grey.shade500)),
+            Text(amount, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
+          ],
+        )
       ],
     );
   }

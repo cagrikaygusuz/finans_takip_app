@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:finans_takip_app/src/features/shell/presentation/main_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:finans_takip_app/src/common/theme/app_theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -25,29 +26,18 @@ class MyApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     // SharedPreferences provider'ının yüklenmesini bekle
     final asyncPrefs = ref.watch(sharedPreferencesProvider);
-
-    // Henüz yüklenmediyse bir bekleme ekranı göster
     if (asyncPrefs is! AsyncData) {
       return const MaterialApp(home: Scaffold(body: Center(child: CircularProgressIndicator())));
     }
-
-    // Tema provider'ını dinle
     final themeMode = ref.watch(themeProvider);
 
     return MaterialApp(
       title: 'Finans Takip',
-      // TEMA AYARLARI BURADA UYGULANIYOR
+      // GÜNCELLENDİ: Artık özel tema sınıfımızı kullanıyoruz
       themeMode: themeMode,
-      theme: ThemeData(
-        useMaterial3: true,
-        brightness: Brightness.light,
-        colorSchemeSeed: Colors.deepPurple,
-      ),
-      darkTheme: ThemeData(
-        useMaterial3: true,
-        brightness: Brightness.dark,
-        colorSchemeSeed: Colors.deepPurple,
-      ),
+      theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+
       home: const MainScreen(),
       debugShowCheckedModeBanner: false,
     );

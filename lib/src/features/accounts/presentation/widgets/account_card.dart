@@ -21,17 +21,17 @@ class AccountCard extends StatelessWidget {
   IconData _getIconForAccountType(AccountType type) {
     switch (type) {
       case AccountType.bank:
-        return Icons.account_balance;
+        return Icons.account_balance_outlined;
       case AccountType.cash:
-        return Icons.wallet;
+        return Icons.wallet_outlined;
       case AccountType.creditCard:
-        return Icons.credit_card;
+        return Icons.credit_card_outlined;
       case AccountType.investment:
-        return Icons.trending_up;
+        return Icons.trending_up_rounded;
       case AccountType.loan:
-        return Icons.receipt_long;
+        return Icons.receipt_long_outlined;
       case AccountType.timeDeposit:
-        return Icons.savings;
+        return Icons.savings_outlined;
       default:
         return Icons.question_mark;
     }
@@ -39,61 +39,99 @@ class AccountCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final currencyFormat = NumberFormat.currency(locale: 'tr_TR', symbol: '₺');
+    
+    // Koyu temada karta hafif bir gradient ve farklı bir renk verelim
+    final cardColor = theme.brightness == Brightness.dark ? theme.colorScheme.surface : theme.cardTheme.color;
+    final cardDecoration = theme.brightness == Brightness.dark
+        ? BoxDecoration(
+            borderRadius: BorderRadius.circular(16.0),
+            gradient: LinearGradient(
+              colors: [
+                theme.colorScheme.surface.withOpacity(0.9),
+                theme.colorScheme.surface,
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          )
+        : null;
+
+
     return Card(
-      elevation: isSelected ? 8.0 : 2.0,
+      // Card'ın kendi elevation'ı yerine Container'a gölge vererek daha iyi kontrol sağlayacağız
+      elevation: 0, 
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12.0),
+        borderRadius: BorderRadius.circular(16.0),
         side: isSelected
-            ? BorderSide(color: Theme.of(context).colorScheme.primary, width: 2)
+            ? BorderSide(color: theme.colorScheme.primary, width: 2)
             : BorderSide.none,
       ),
-      margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 6.0),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12.0),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(_getIconForAccountType(account.type), color: Theme.of(context).colorScheme.primary),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      account.name,
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  if (onEdit != null)
-                    IconButton(
-                      icon: Icon(Icons.edit, size: 20, color: Colors.grey.shade600),
-                      onPressed: onEdit,
-                      tooltip: 'Düzenle',
-                    ),
-                  if (onDelete != null)
-                    IconButton(
-                      icon: Icon(Icons.delete, size: 20, color: Colors.grey.shade600),
-                      onPressed: onDelete,
-                      tooltip: 'Sil',
-                    ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Align(
-                alignment: Alignment.centerRight,
-                child: Text(
-                  currencyFormat.format(account.balance),
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: account.balance >= 0 ? Colors.green.shade700 : Colors.red.shade700,
+      margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      child: Container(
+        decoration: cardDecoration,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16.0),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 24.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    CircleAvatar(
+                      backgroundColor: theme.colorScheme.primary.withOpacity(0.1),
+                      child: Icon(
+                        _getIconForAccountType(account.type),
+                        color: theme.colorScheme.primary,
                       ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Text(
+                        account.name,
+                        style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    // Menü butonu (Düzenle/Sil için)
+                    PopupMenuButton<String>(
+                      onSelected: (value) {
+                        if (value == 'edit' && onEdit != null) {
+                          onEdit!();
+                        } else if (value == 'delete' && onDelete != null) {
+                          onDelete!();
+                        }
+                      },
+                      itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+                        const PopupMenuItem<String>(
+                          value: 'edit',
+                          child: ListTile(leading: Icon(Icons.edit), title: Text('Düzenle')),
+                        ),
+                        const PopupMenuItem<String>(
+                          value: 'delete',
+                          child: ListTile(leading: Icon(Icons.delete), title: Text('Sil')),
+                        ),
+                      ],
+                      icon: Icon(Icons.more_vert, color: Colors.grey.shade500),
+                    ),
+                  ],
                 ),
-              ),
-            ],
+                const SizedBox(height: 24),
+                Text(
+                  'Bakiye',
+                  style: theme.textTheme.bodyMedium?.copyWith(color: Colors.grey.shade500),
+                ),
+                Text(
+                  currencyFormat.format(account.balance),
+                  style: theme.textTheme.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: account.balance >= 0 ? null : Colors.redAccent,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
