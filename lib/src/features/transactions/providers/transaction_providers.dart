@@ -25,32 +25,28 @@ final transactionFilterProvider = StateProvider<TransactionFilter>((ref) {
 // Filtrelenmiş işlem listesini sağlayan ana provider
 final filteredTransactionListProvider = FutureProvider<List<Transaction>>((ref) async {
   final isar = await ref.watch(isarProvider.future);
-  final filter = ref.watch(transactionFilterProvider); // Filtre durumunu dinle
+  final filter = ref.watch(transactionFilterProvider);
+  final allTransactions = await isar.transactions.where().sortByDateDesc().findAll();
+// 2. Linkleri yüklüyoruz.
+  for (var t in allTransactions) {
+    await t.sourceAccount.load();
+    await t.destinationAccount.load();
+    await t.category.load();
+  }
+  final filteredList = allTransactions.where((t) {
+    if (filter.startDate != null && t.date.isBefore(filter.startDate!)) return false;
+    if (filter.endDate != null) {
+      final endOfDay = DateTime(filter.endDate!.year, filter.endDate!.month, filter.endDate!.day, 23, 59, 59);
+      if (t.date.isAfter(endOfDay)) return false;
+    }
+    if (filter.transactionType != null && t.type != filter.transactionType) return false;
+    if (filter.account != null && (t.sourceAccount.value?.id != filter.account!.id && t.destinationAccount.value?.id != filter.account!.id)) return false;
+    if (filter.category != null && t.category.value?.id != filter.category!.id) return false;
 
-  var query = isar.transactions.filter();
-
-  if (filter.startDate != null) {
-    query = query.dateGreaterThan(filter.startDate!, include: true);
-  }
-  if (filter.endDate != null) {
-    final endOfDay = DateTime(filter.endDate!.year, filter.endDate!.month, filter.endDate!.day, 23, 59, 59);
-    query = query.dateLessThan(endOfDay, include: true);
-  }
-  if (filter.transactionType != null) {
-    query = query.typeEqualTo(filter.transactionType!);
-  }
-  if (filter.account != null) {
-    // Daha önce sorun çıkaran iç içe sorgu yerine, doğrudan nesne ile karşılaştırma yapıyoruz.
-    query = query.sourceAccountEqualTo(filter.account).or().destinationAccountEqualTo(filter.account);
-  }
-  if (filter.category != null) {
-    // Kategori için de doğrudan nesne karşılaştırması en sağlıklısı.
-    query = query.categoryEqualTo(filter.category!);
-  }
-
-  return await query.sortByDateDesc().findAll();
+    return true;
+  }).toList();
+    return filteredList;
 });
-
 
 // Belirli bir hesaba ait işlemleri getiren provider (değişiklik yok)
 final transactionsForAccountProvider = FutureProvider.family<List<Transaction>, int>((ref, accountId) async {
