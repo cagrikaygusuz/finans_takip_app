@@ -16,44 +16,32 @@ final transactionControllerProvider = Provider<TransactionController>((ref) {
   return TransactionController(ref);
 });
 
-// Aktif filtre durumunu tutan StateProvider
 final transactionFilterProvider = StateProvider<TransactionFilter>((ref) {
-  return TransactionFilter(); // Başlangıçta boş filtre
+  return TransactionFilter();
 });
 
-// Filtrelenmiş işlem listesini sağlayan ana provider (Manuel Filtreleme ile)
+// NİHAİ DÜZELTME: Manuel filtreleme mantığı
 final filteredTransactionListProvider = FutureProvider<List<Transaction>>((ref) async {
   final isar = await ref.watch(isarProvider.future);
   final filter = ref.watch(transactionFilterProvider);
 
-  // 1. Önce veritabanından TÜM işlemleri alıyoruz.
   final allTransactions = await isar.transactions.where().sortByDateDesc().findAll();
 
-  // 2. İşlemlerin bağlı olduğu hesapları ve kategorileri yüklüyoruz.
   for (var t in allTransactions) {
     await t.sourceAccount.load();
     await t.destinationAccount.load();
     await t.category.load();
   }
 
-  // 3. Listeyi Dart koduyla manuel olarak filtreliyoruz.
   final filteredList = allTransactions.where((t) {
-    if (filter.startDate != null && t.date.isBefore(filter.startDate!)) {
-      return false;
-    }
+    if (filter.startDate != null && t.date.isBefore(filter.startDate!)) return false;
     if (filter.endDate != null) {
       final endOfDay = DateTime(filter.endDate!.year, filter.endDate!.month, filter.endDate!.day, 23, 59, 59);
       if (t.date.isAfter(endOfDay)) return false;
     }
-    if (filter.transactionType != null && t.type != filter.transactionType) {
-      return false;
-    }
-    if (filter.account != null && (t.sourceAccount.value?.id != filter.account!.id && t.destinationAccount.value?.id != filter.account!.id)) {
-      return false;
-    }
-    if (filter.category != null && t.category.value?.id != filter.category!.id) {
-      return false;
-    }
+    if (filter.transactionType != null && t.type != filter.transactionType) return false;
+    if (filter.account != null && (t.sourceAccount.value?.id != filter.account!.id && t.destinationAccount.value?.id != filter.account!.id)) return false;
+    if (filter.category != null && t.category.value?.id != filter.category!.id) return false;
     
     return true;
   }).toList();
@@ -61,7 +49,7 @@ final filteredTransactionListProvider = FutureProvider<List<Transaction>>((ref) 
   return filteredList;
 });
 
-// Belirli bir hesaba ait işlemleri getiren provider (Manuel Filtreleme ile)
+// NİHAİ DÜZELTME: Manuel filtreleme mantığı
 final transactionsForAccountProvider = FutureProvider.family<List<Transaction>, int>((ref, accountId) async {
   final isar = await ref.watch(isarProvider.future);
   final allTransactions = await isar.transactions.where().sortByDateDesc().findAll();
@@ -78,7 +66,6 @@ final transactionsForAccountProvider = FutureProvider.family<List<Transaction>, 
   }).toList();
 });
 
-// TransactionController sınıfı
 class TransactionController {
   final Ref _ref;
   TransactionController(this._ref);

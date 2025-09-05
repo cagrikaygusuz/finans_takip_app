@@ -6,13 +6,9 @@ import 'package:finans_takip_app/src/features/transactions/data/transaction_mode
 import 'package:finans_takip_app/src/features/transactions/providers/transaction_providers.dart';
 import 'package:finans_takip_app/src/features/categories/data/category_model.dart';
 
-// Varlık olarak kabul edilen hesap türleri
 const assetTypes = {AccountType.bank, AccountType.cash, AccountType.investment, AccountType.timeDeposit};
-
-// Borç olarak kabul edilen hesap türleri
 const liabilityTypes = {AccountType.creditCard, AccountType.loan};
 
-// Toplam varlıkları hesaplayan provider
 final totalAssetsProvider = Provider<double>((ref) {
   final accounts = ref.watch(accountListProvider).value ?? [];
   return accounts
@@ -20,7 +16,6 @@ final totalAssetsProvider = Provider<double>((ref) {
       .fold(0.0, (sum, acc) => sum + acc.balance);
 });
 
-// Toplam borçları hesaplayan provider
 final totalLiabilitiesProvider = Provider<double>((ref) {
   final accounts = ref.watch(accountListProvider).value ?? [];
   return accounts
@@ -28,31 +23,25 @@ final totalLiabilitiesProvider = Provider<double>((ref) {
       .fold(0.0, (sum, acc) => sum + acc.balance);
 });
 
-// Net varlığı (Varlıklar - Borçlar) hesaplayan provider
 final netWorthProvider = Provider<double>((ref) {
   final assets = ref.watch(totalAssetsProvider);
   final liabilities = ref.watch(totalLiabilitiesProvider);
-  return assets + liabilities; // Borçlar negatif olduğu için direk topluyoruz.
+  return assets + liabilities;
 });
 
-// Giderleri kategorilere göre gruplayıp toplamlarını hesaplayan provider
 final expenseByCategoryProvider = Provider<Map<Category, double>>((ref) {
-  // DÜZELTME: Artık 'filteredTransactionListProvider'ı dinliyoruz
+  // DÜZELTME BURADA:
   final transactions = ref.watch(filteredTransactionListProvider).value ?? [];
-
   final expenseTransactions = transactions.where((t) => t.type == TransactionType.expense && t.category.value != null);
-
   final groupedExpenses = groupBy(expenseTransactions, (Transaction t) => t.category.value!);
-
   return groupedExpenses.map((category, transactions) {
     final total = transactions.fold<double>(0.0, (sum, t) => sum + t.amount);
     return MapEntry(category, total);
   });
 });
 
-// Son 5 işlemi getiren provider
 final recentTransactionsProvider = Provider<List<Transaction>>((ref) {
-  // DÜZELTME: Artık 'filteredTransactionListProvider'ı dinliyoruz
+  // DÜZELTME BURADA:
   final transactions = ref.watch(filteredTransactionListProvider).value ?? [];
   return transactions.take(5).toList();
 });

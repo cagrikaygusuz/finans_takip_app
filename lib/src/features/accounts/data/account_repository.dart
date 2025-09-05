@@ -4,7 +4,6 @@ import 'package:isar/isar.dart';
 
 class AccountRepository {
   final Isar isar;
-
   AccountRepository(this.isar);
 
   Future<List<Account>> getAllAccounts() async {
@@ -15,18 +14,19 @@ class AccountRepository {
     await isar.writeTxn(() async => await isar.accounts.put(account));
   }
 
-  // YENİ: Hesap Silme
-  // Bir hesabı silmeden önce, ona bağlı işlem olup olmadığını kontrol et.
   Future<bool> deleteAccount(int accountId) async {
-    final transactionCount = await isar.transactions
-        .filter()
-        .sourceAccount((q) => q.idEqualTo(accountId))
-        .or()
-        .destinationAccount((q) => q.idEqualTo(accountId))
-        .count();
+    // DÜZELTME: Manuel filtreleme
+    final allTransactions = await isar.transactions.where().findAll();
+    for (var t in allTransactions) {
+      await t.sourceAccount.load();
+      await t.destinationAccount.load();
+    }
+    
+    final transactionCount = allTransactions.where((t) {
+      return t.sourceAccount.value?.id == accountId || t.destinationAccount.value?.id == accountId;
+    }).length;
 
     if (transactionCount > 0) {
-      // Bu hesaba bağlı işlemler var, silinemez.
       print('Bu hesaba bağlı $transactionCount adet işlem var. Silinemez.');
       return false;
     }
