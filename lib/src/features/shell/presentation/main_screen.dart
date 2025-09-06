@@ -8,7 +8,9 @@ import 'package:finans_takip_app/src/features/transactions/presentation/transact
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:finans_takip_app/src/features/bills/presentation/bills_screen.dart'; // Yeni import
+import 'package:finans_takip_app/src/features/bills/presentation/bills_screen.dart'; 
+import 'package:finans_takip_app/src/features/reports/presentation/reports_screen.dart';
+
 
 class MainScreen extends ConsumerStatefulWidget {
   const MainScreen({super.key});
@@ -22,6 +24,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
 
   static const List<Widget> _widgetOptions = <Widget>[
     DashboardScreen(),
+    ReportsScreen(), // Yeni rapor ekranı eklendi
     TransactionsScreen(),
     AccountsScreen(),
     BillsScreen(), // Yeni ekran eklendi
@@ -47,6 +50,10 @@ class _MainScreenState extends ConsumerState<MainScreen> {
             icon: Icon(Icons.dashboard),
             label: 'Dashboard',
           ),
+          BottomNavigationBarItem(
+      icon: Icon(Icons.bar_chart),
+      label: 'İstatistikler', // YENİ SEÇENEK
+      ),
           BottomNavigationBarItem(
             icon: Icon(Icons.swap_horiz),
             label: 'İşlemler',
